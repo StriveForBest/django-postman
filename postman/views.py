@@ -402,6 +402,7 @@ class UpdateMessageMixin(object):
             if self.field_bit == 'read_at':
                 recipient_rows = Message.objects.as_recipient(user, filter)\
                     .update(**{self.field_bit: self.field_value})
+                sender_rows = None
             else:
                 recipient_rows = Message.objects.as_recipient(user, filter).update(**{'recipient_{0}'.format(self.field_bit): self.field_value})
                 sender_rows = Message.objects.as_sender(user, filter).update(**{'sender_{0}'.format(self.field_bit): self.field_value})
