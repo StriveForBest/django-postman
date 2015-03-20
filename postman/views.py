@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import json
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,7 +12,7 @@ except ImportError:
 from django.contrib.sites.models import get_current_site
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 try:
@@ -185,6 +187,11 @@ class ComposeMixin(object):
             messages.warning(self.request, _("Message rejected for at least one recipient."), fail_silently=True)
         return redirect(self.get_success_url())
 
+    def form_invalid(self, form):
+        if self.request.is_ajax():
+            return HttpResponse(json.dumps(form.errors),
+                                content_type="application/json", status=400)
+
     def get_context_data(self, **kwargs):
         context = super(ComposeMixin, self).get_context_data(**kwargs)
         context.update({
@@ -269,7 +276,7 @@ class ReplyView(ComposeMixin, FormView):
     def dispatch(self, request, message_id, *args, **kwargs):
         perms = Message.objects.perms(request.user)
         self.parent = get_object_or_404(Message, perms, pk=message_id)
-        return super(ReplyView, self).dispatch(request,*args, **kwargs)
+        return super(ReplyView, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         self.initial = self.parent.quote(*self.formatters)  # will also be partially used in get_form_kwargs()
@@ -392,8 +399,12 @@ class UpdateMessageMixin(object):
         if pks or tpks:
             user = request.user
             filter = Q(pk__in=pks) | Q(thread__in=tpks)
-            recipient_rows = Message.objects.as_recipient(user, filter).update(**{'recipient_{0}'.format(self.field_bit): self.field_value})
-            sender_rows = Message.objects.as_sender(user, filter).update(**{'sender_{0}'.format(self.field_bit): self.field_value})
+            if self.field_bit == 'read_at':
+                recipient_rows = Message.objects.as_recipient(user, filter)\
+                    .update(**{self.field_bit: self.field_value})
+            else:
+                recipient_rows = Message.objects.as_recipient(user, filter).update(**{'recipient_{0}'.format(self.field_bit): self.field_value})
+                sender_rows = Message.objects.as_sender(user, filter).update(**{'sender_{0}'.format(self.field_bit): self.field_value})
             if not (recipient_rows or sender_rows):
                 raise Http404  # abnormal enough, like forged ids
             messages.success(request, self.success_msg, fail_silently=True)
@@ -408,6 +419,13 @@ class ArchiveView(UpdateMessageMixin, View):
     field_bit = 'archived'
     success_msg = lz_("Messages or conversations successfully archived.")
     field_value = True
+
+
+class ReadView(UpdateMessageMixin, View):
+    """Mark messages/conversations from marked as read."""
+    field_bit = 'read_at'
+    field_value = now()
+    success_msg = lz_("Messages or conversations successfully marked as read.")
 
 
 class DeleteView(UpdateMessageMixin, View):

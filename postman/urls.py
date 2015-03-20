@@ -95,20 +95,32 @@ except ImportError:
 from django.views.generic.base import RedirectView
 
 from . import OPTIONS
-from .views import (InboxView, SentView, ArchivesView, TrashView,
-        WriteView, ReplyView, MessageView, ConversationView,
-        ArchiveView, DeleteView, UndeleteView)
+from .views import (
+    InboxView,
+    SentView,
+    ArchivesView,
+    TrashView,
+    WriteView,
+    ReplyView,
+    MessageView,
+    ConversationView,
+    ReadView,
+    ArchiveView,
+    DeleteView,
+    UndeleteView
+)
 
 
 urlpatterns = patterns('',
-    url(r'^inbox/(?:(?P<option>'+OPTIONS+')/)?$', InboxView.as_view(), name='postman_inbox'),
-    url(r'^sent/(?:(?P<option>'+OPTIONS+')/)?$', SentView.as_view(), name='postman_sent'),
-    url(r'^archives/(?:(?P<option>'+OPTIONS+')/)?$', ArchivesView.as_view(), name='postman_archives'),
-    url(r'^trash/(?:(?P<option>'+OPTIONS+')/)?$', TrashView.as_view(), name='postman_trash'),
+    url(r'^inbox/(?:(?P<option>' + OPTIONS + ')/)?$', InboxView.as_view(), name='postman_inbox'),
+    url(r'^sent/(?:(?P<option>' + OPTIONS + ')/)?$', SentView.as_view(), name='postman_sent'),
+    url(r'^archives/(?:(?P<option>' + OPTIONS + ')/)?$', ArchivesView.as_view(), name='postman_archives'),
+    url(r'^trash/(?:(?P<option>' + OPTIONS + ')/)?$', TrashView.as_view(), name='postman_trash'),
     url(r'^write/(?:(?P<recipients>[^/#]+)/)?$', WriteView.as_view(), name='postman_write'),
     url(r'^reply/(?P<message_id>[\d]+)/$', ReplyView.as_view(), name='postman_reply'),
     url(r'^view/(?P<message_id>[\d]+)/$', MessageView.as_view(), name='postman_view'),
     url(r'^view/t/(?P<thread_id>[\d]+)/$', ConversationView.as_view(), name='postman_view_conversation'),
+    url(r'^read/$', ReadView.as_view(), name='postman_read'),
     url(r'^archive/$', ArchiveView.as_view(), name='postman_archive'),
     url(r'^delete/$', DeleteView.as_view(), name='postman_delete'),
     url(r'^undelete/$', UndeleteView.as_view(), name='postman_undelete'),
