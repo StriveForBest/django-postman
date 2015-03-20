@@ -24,7 +24,8 @@ class BasicCommaSeparatedUserField(CharField):
 
     """
     default_error_messages = {
-        'unknown': _("Some usernames are unknown or no more active: {users}."),
+        'unknown': _("We were unable to find the following username(s) on {site}"
+                     .format(site=getattr(settings, 'PROJECT_NAME', 'site'))),
         'max': _("Ensure this value has at most {limit_value} distinct items (it has {show_value})."),
         'min': _("Ensure this value has at least {limit_value} distinct items (it has {show_value})."),
         'filtered': _("Some usernames are rejected: {users}."),
@@ -114,7 +115,7 @@ if app_name in settings.INSTALLED_APPS and arg_default:
     class CommaSeparatedUserField(BasicCommaSeparatedUserField, auto_complete_field):
         def __init__(self, *args, **kwargs):
             if not args and arg_name not in kwargs:
-                kwargs.update([(arg_name,arg_default)])
+                kwargs.update([(arg_name, arg_default)])
             super(CommaSeparatedUserField, self).__init__(*args, **kwargs)
 
         def set_arg(self, value):
