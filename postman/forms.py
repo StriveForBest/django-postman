@@ -50,18 +50,21 @@ class BaseWriteForm(forms.ModelForm):
         channel = kwargs.pop('channel', None)
         self.site = kwargs.pop('site', None)
         super(BaseWriteForm, self).__init__(*args, **kwargs)
+        self.fields['subject'].widget.attrs['placeholder'] = 'Subject'
+        self.fields['body'].widget.attrs['placeholder'] = 'Write a message'
 
         self.instance.sender = sender if (sender and sender.is_authenticated()) else None
         if exchange_filter:
             self.exchange_filter = exchange_filter
         if 'recipients' in self.fields:
+            self.fields['recipients'].widget.attrs['placeholder'] = 'Recipients'
             if user_filter and hasattr(self.fields['recipients'], 'user_filter'):
                 self.fields['recipients'].user_filter = user_filter
 
             if getattr(settings, 'POSTMAN_DISALLOW_MULTIRECIPIENTS', False):
                 max = 1
             if max is not None and hasattr(self.fields['recipients'], 'set_max') \
-            and getattr(self, 'can_overwrite_limits', True):
+                    and getattr(self, 'can_overwrite_limits', True):
                 self.fields['recipients'].set_max(max)
 
             if channel and hasattr(self.fields['recipients'], 'set_arg'):
@@ -72,6 +75,7 @@ class BaseWriteForm(forms.ModelForm):
         'filtered_user': _("{username}"),
         'filtered_user_with_reason': _("{username} ({reason})"),
     }
+
     def clean_recipients(self):
         """Check no filter prohibit the exchange."""
         recipients = self.cleaned_data['recipients']
@@ -137,7 +141,7 @@ class BaseWriteForm(forms.ModelForm):
             self.instance.auto_moderate(auto_moderators)
             self.instance.clean_moderation(initial_status)
             self.instance.clean_for_visitor()
-            m = super(BaseWriteForm, self).save()
+            super(BaseWriteForm, self).save()
             if self.instance.is_rejected():
                 is_successful = False
             self.instance.update_parent(initial_status)
@@ -202,6 +206,8 @@ class QuickReplyForm(BaseReplyForm):
 
 
 allow_copies = not getattr(settings, 'POSTMAN_DISALLOW_COPIES_ON_REPLY', False)
+
+
 class FullReplyForm(BaseReplyForm):
     """The complete reply form."""
     if allow_copies:
