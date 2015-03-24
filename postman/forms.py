@@ -50,8 +50,9 @@ class BaseWriteForm(forms.ModelForm):
         channel = kwargs.pop('channel', None)
         self.site = kwargs.pop('site', None)
         super(BaseWriteForm, self).__init__(*args, **kwargs)
-        self.fields['subject'].widget.attrs['placeholder'] = 'Subject'
         self.fields['body'].widget.attrs['placeholder'] = 'Write a message'
+        if 'subject' in self.fields:
+            self.fields['subject'].widget.attrs['placeholder'] = 'Subject'
 
         self.instance.sender = sender if (sender and sender.is_authenticated()) else None
         if exchange_filter:
