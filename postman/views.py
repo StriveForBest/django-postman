@@ -29,6 +29,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.generic import FormView, TemplateView, View
 
 from . import OPTION_MESSAGES
+from .exceptions import BadRequest
 from .fields import autocompleter_app
 from .forms import WriteForm, AnonymousWriteForm, QuickReplyForm, FullReplyForm
 from .models import Message, get_order_by
@@ -220,6 +221,9 @@ class WriteView(ComposeMixin, FormView):
 
     @csrf_protect_m
     def dispatch(self, *args, **kwargs):
+        if not self.request.is_ajax():
+            raise BadRequest('AJAX only requests')
+
         if getattr(settings, 'POSTMAN_DISALLOW_ANONYMOUS', False):
             return login_required(super(WriteView, self).dispatch)(*args, **kwargs)
         return super(WriteView, self).dispatch(*args, **kwargs)
