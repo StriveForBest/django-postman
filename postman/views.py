@@ -192,6 +192,8 @@ class ComposeMixin(object):
         if self.request.is_ajax():
             return HttpResponse(json.dumps(form.errors),
                                 content_type="application/json", status=400)
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
 
     def get_context_data(self, **kwargs):
         context = super(ComposeMixin, self).get_context_data(**kwargs)
@@ -221,9 +223,6 @@ class WriteView(ComposeMixin, FormView):
 
     @csrf_protect_m
     def dispatch(self, *args, **kwargs):
-        if not self.request.is_ajax():
-            raise BadRequest('AJAX only requests')
-
         if getattr(settings, 'POSTMAN_DISALLOW_ANONYMOUS', False):
             return login_required(super(WriteView, self).dispatch)(*args, **kwargs)
         return super(WriteView, self).dispatch(*args, **kwargs)

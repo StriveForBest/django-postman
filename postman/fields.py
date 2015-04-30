@@ -2,6 +2,7 @@
 Custom fields.
 """
 from __future__ import unicode_literals
+import operator
 
 from django.conf import settings
 try:
@@ -10,6 +11,7 @@ except ImportError:
     from postman.future_1_5 import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import EMPTY_VALUES
+from django.db.models import Q
 from django.forms.fields import CharField
 from django.utils.translation import ugettext_lazy as _
 
@@ -71,9 +73,20 @@ class BasicCommaSeparatedUserField(CharField):
         names = super(BasicCommaSeparatedUserField, self).clean(value)
         if not names:
             return []
+
+        # do a case insensitive search, potentially on an alternate field
         user_model = get_user_model()
-        users = list(user_model.objects.filter(is_active=True, **{'{0}__in'.format(user_model.USERNAME_FIELD): names}))
-        unknown_names = set(names) ^ set([u.get_username() for u in users])
+        username_field = getattr(
+            user_model, 'POSTMAN_USERNAME_FIELD', user_model.USERNAME_FIELD)
+        search_args = []
+        for name in names:
+            search_args.append(Q(**{'{0}__iexact'.format(username_field): name}))
+        users = list(user_model.objects.filter(
+            Q(is_active=True) &
+            reduce(operator.or_, search_args)))
+
+        unknown_names = set([n.lower() for n in names]) ^ \
+            set([getattr(u, username_field, u.get_username()).lower() for u in users])
         errors = []
         if unknown_names:
             errors.append(self.error_messages['unknown'].format(users=', '.join(unknown_names)))
@@ -87,7 +100,7 @@ class BasicCommaSeparatedUserField(CharField):
                         filtered_names.append(
                             self.error_messages[
                                 'filtered_user_with_reason' if reason else 'filtered_user'
-                            ].format(username=u.get_username(), reason=reason)
+                            ].format(username=getattr(u, username_field, u.get_username()), reason=reason)
                         )
                 except ValidationError as e:
                     users.remove(u)

@@ -1,6 +1,9 @@
 *.pyc
-*.sw[op]
+*.sw[nop]
 *~
 *.out
 .DS_Store
 /docs/_*
+/build/
+/dist/
+/django_postman.egg-info/
